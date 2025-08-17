@@ -1,0 +1,20 @@
+{
+  "include": [
+    "./src/**/*",
+    "./vitest.config.ts"
+  ],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "lib": ["ES2018"],
+    "target": "ES2018",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  }
+}

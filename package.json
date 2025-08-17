@@ -1,0 +1,50 @@
+{
+  "name": "valibot-fast-check",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Generate fast-check arbitraries for Valibot schemas",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "property-based testing",
+    "valibot",
+    "fast-check",
+    "fastcheck",
+    "validation",
+    "schema",
+    "unit testing",
+    "testing"
+  ],
+  "author": "Erons",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eronmmer/valibot-fast-check.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Eronmmer/valibot-fast-check/issues"
+  },
+  "homepage": "https://github.com/Eronmmer/valibot-fast-check",
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "eslint": "^9.33.0",
+    "fast-check": "^4.2.0",
+    "globals": "^16.3.0",
+    "jiti": "^2.5.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
+    "valibot": "^1.1.0",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "fast-check": "^4.2.0",
+    "valibot": "^1.1.0"
+  }
+}
