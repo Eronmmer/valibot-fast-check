@@ -4,3 +4,7 @@ node_modules
 *.tsbuildinfo
 npm-debug.log*
 .vscode/
+
+# remove the following before publishing
+/src/play-ground.js
+temp.md
