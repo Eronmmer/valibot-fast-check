@@ -1,16 +1,16 @@
 import fc from "fast-check";
 import { UnknownValibotSchema } from "..";
 
-export function buildBigIntArbitrary(schema: UnknownValibotSchema) {
-  let minValue: bigint | null = null;
-  let maxValue: bigint | null = null;
+export function buildDateArbitrary(schema: UnknownValibotSchema) {
+  let minValue: Date | null = null;
+  let maxValue: Date | null = null;
 
-  const filters: Array<(n: bigint) => boolean> = [];
+  const filters: Array<(n: Date) => boolean> = [];
 
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
   if (!pipes || !Array.isArray(pipes)) {
-    return fc.bigInt();
+    return fc.date();
   }
 
   for (const pipe of pipes) {
@@ -51,17 +51,17 @@ export function buildBigIntArbitrary(schema: UnknownValibotSchema) {
     }
   }
 
-  const constraints: { min?: bigint; max?: bigint } = {};
+  const constraints: { min?: Date; max?: Date } = {};
 
-  if (typeof minValue === "bigint") {
+  if (minValue instanceof Date) {
     constraints.min = minValue;
   }
 
-  if (typeof maxValue === "bigint") {
+  if (maxValue instanceof Date) {
     constraints.max = maxValue;
   }
 
-  let arbitrary = fc.bigInt(constraints);
+  let arbitrary = fc.date(constraints);
 
   for (const filter of filters) {
     arbitrary = arbitrary.filter(filter);
