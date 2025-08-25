@@ -1,13 +1,15 @@
-import fc, { Arbitrary } from "fast-check";
+import fc from "fast-check";
 import { UnknownValibotSchema } from "../index";
+import { filterBySchema } from "../helpers";
 
-export function buildStringArbitrary(schema: UnknownValibotSchema) {
+export function buildStringArbitrary(
+  schema: UnknownValibotSchema,
+  path: string,
+) {
   let minLength = 0;
   let maxLength: number | null = null;
   const mappings: Array<(s: string) => string> = [];
-  const regexFilters: RegExp[] = [];
-  let hasSpecialFormat = false;
-  let specialFormatArbitrary: Arbitrary<string> | null = null;
+  let hasUnsupportedFormat = false;
 
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
@@ -15,9 +17,7 @@ export function buildStringArbitrary(schema: UnknownValibotSchema) {
     return fc.string();
   }
 
-  for (const validation of pipes.filter(
-    (pipe) => pipe.kind === "validation" || pipe.kind === "transformation",
-  )) {
+  for (const validation of pipes.filter((pipe) => pipe.kind === "validation")) {
     switch (validation.type) {
       case "min_length":
         minLength = Math.max(minLength, validation.requirement);
@@ -36,20 +36,11 @@ export function buildStringArbitrary(schema: UnknownValibotSchema) {
         mappings.push((s) => s + validation.requirement);
         break;
       case "uuid":
-        hasSpecialFormat = true;
-        specialFormatArbitrary = fc.uuid();
-        break;
+        return fc.uuid();
       case "email":
-        hasSpecialFormat = true;
-        specialFormatArbitrary = fc.emailAddress();
-        break;
+        return fc.emailAddress();
       case "url":
-        hasSpecialFormat = true;
-        specialFormatArbitrary = fc.webUrl();
-        break;
-      case "regex":
-        regexFilters.push(validation.requirement);
-        break;
+        return fc.webUrl();
       case "includes":
         mappings.push((s) =>
           s.includes(validation.requirement) ? s : s + validation.requirement,
@@ -62,24 +53,8 @@ export function buildStringArbitrary(schema: UnknownValibotSchema) {
         mappings.push((s) => s.trim());
         break;
       default:
-        if (
-          validation.requirement &&
-          validation.requirement instanceof RegExp
-        ) {
-          regexFilters.push(validation.requirement);
-        }
+        hasUnsupportedFormat = true;
     }
-  }
-
-  /* If we have a special formats (like uuid, email, url), we use it as a base and then regex filters */
-  if (hasSpecialFormat && specialFormatArbitrary) {
-    let arbitrary = specialFormatArbitrary;
-
-    for (const regex of regexFilters) {
-      arbitrary = arbitrary.filter((s) => regex.test(s));
-    }
-
-    return arbitrary;
   }
 
   if (maxLength === null) maxLength = 2 * minLength + 10;
@@ -93,9 +68,9 @@ export function buildStringArbitrary(schema: UnknownValibotSchema) {
     arbitrary = arbitrary.map(mapping);
   }
 
-  for (const regex of regexFilters) {
-    arbitrary = arbitrary.filter((s) => regex.test(s));
+  if (hasUnsupportedFormat) {
+    return filterBySchema(arbitrary, schema, path);
+  } else {
+    return arbitrary;
   }
-
-  return arbitrary;
 }

@@ -19,7 +19,7 @@ class _VFC {
     schema: Schema,
   ): Arbitrary<InferInput<Schema>> {
     if (isSupportedSchemaType(schema)) {
-      return arbitraryBuilder[schema.type as VFCType](schema);
+      return arbitraryBuilder[schema.type as VFCType](schema, "");
     }
 
     unsupportedSchemaError(schema.type);
