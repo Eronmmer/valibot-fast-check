@@ -1,71 +1,72 @@
 import fc from "fast-check";
 import { UnknownValibotSchema } from "..";
+import { filterBySchema } from "../helpers";
 
-export function buildBigIntArbitrary(schema: UnknownValibotSchema) {
-  let minValue: bigint | null = null;
-  let maxValue: bigint | null = null;
+export function buildBigIntArbitrary(
+	schema: UnknownValibotSchema,
+	path: string
+) {
+	let minValue: bigint | null = null;
+	let maxValue: bigint | null = null;
+	let hasUnsupportedFormat = false;
+	const pipes = "pipe" in schema ? schema.pipe : undefined;
 
-  const filters: Array<(n: bigint) => boolean> = [];
+	if (!pipes || !Array.isArray(pipes)) {
+		return fc.bigInt();
+	}
 
-  const pipes = "pipe" in schema ? schema.pipe : undefined;
+	for (const pipe of pipes) {
+		if (pipe.kind === "validation") {
+			switch (pipe.type) {
+				case "min_value":
+					if (minValue === null || pipe.requirement > minValue) {
+						minValue = pipe.requirement;
+					}
+					break;
+				case "max_value":
+					if (maxValue === null || pipe.requirement < maxValue) {
+						maxValue = pipe.requirement;
+					}
+					break;
+				case "gt_value":
+					if (
+						(minValue === null || pipe.requirement > minValue) &&
+						typeof pipe.requirement === "bigint"
+					) {
+						minValue = pipe.requirement + BigInt(1);
+					}
+					break;
+				case "lt_value":
+					if (
+						(maxValue === null || pipe.requirement < maxValue) &&
+						typeof pipe.requirement === "bigint"
+					) {
+						maxValue = pipe.requirement - BigInt(1);
+					}
+					break;
+				case "value":
+					return fc.constant(pipe.requirement);
+				case "values":
+					return fc.constantFrom(...pipe.requirement);
+				default:
+					hasUnsupportedFormat = true;
+			}
+		}
+	}
 
-  if (!pipes || !Array.isArray(pipes)) {
-    return fc.bigInt();
-  }
+	const constraints: { min?: bigint; max?: bigint } = {};
 
-  for (const pipe of pipes) {
-    if (pipe.kind === "validation") {
-      switch (pipe.type) {
-        case "min_value":
-          if (minValue === null || pipe.requirement > minValue) {
-            minValue = pipe.requirement;
-          }
-          break;
-        case "max_value":
-          if (maxValue === null || pipe.requirement < maxValue) {
-            maxValue = pipe.requirement;
-          }
-          break;
-        case "check":
-          filters.push(pipe.requirement);
-          break;
-        case "gt_value":
-          filters.push((value) => value > pipe.requirement);
-          break;
-        case "lt_value":
-          filters.push((value) => value < pipe.requirement);
-          break;
-        case "not_value":
-          filters.push((value) => value !== pipe.requirement);
-          break;
-        case "not_values":
-          filters.push((value) => !pipe.requirement.includes(value));
-          break;
-        case "value":
-          filters.push((value) => value === pipe.requirement);
-          break;
-        case "values":
-          filters.push((value) => pipe.requirement.includes(value));
-          break;
-      }
-    }
-  }
+	if (typeof minValue === "bigint") {
+		constraints.min = minValue;
+	}
 
-  const constraints: { min?: bigint; max?: bigint } = {};
+	if (typeof maxValue === "bigint") {
+		constraints.max = maxValue;
+	}
 
-  if (typeof minValue === "bigint") {
-    constraints.min = minValue;
-  }
+	const arbitrary = fc.bigInt(constraints);
 
-  if (typeof maxValue === "bigint") {
-    constraints.max = maxValue;
-  }
-
-  let arbitrary = fc.bigInt(constraints);
-
-  for (const filter of filters) {
-    arbitrary = arbitrary.filter(filter);
-  }
-
-  return arbitrary;
+	return hasUnsupportedFormat
+		? filterBySchema(arbitrary, schema, path)
+		: arbitrary;
 }

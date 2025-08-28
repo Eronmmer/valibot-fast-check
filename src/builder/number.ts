@@ -1,13 +1,16 @@
 import fc from "fast-check";
 import { UnknownValibotSchema } from "..";
+import { filterBySchema } from "../helpers";
 
-export function buildNumberArbitrary(schema: UnknownValibotSchema) {
+export function buildNumberArbitrary(
+  schema: UnknownValibotSchema,
+  path: string,
+) {
   let minValue = Number.MIN_SAFE_INTEGER;
   let maxValue = Number.MAX_SAFE_INTEGER;
   let multipleOf: number | null = null;
   let isFinite = false;
-
-  const filters: Array<(n: number) => boolean> = [];
+  let hasUnsupportedFormat = false;
 
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
@@ -33,49 +36,38 @@ export function buildNumberArbitrary(schema: UnknownValibotSchema) {
         case "multiple_of":
           multipleOf = (multipleOf ?? 1) * pipe.requirement;
           break;
-        case "check":
-          filters.push(pipe.requirement);
-          break;
         case "gt_value":
-          filters.push((value) => value > pipe.requirement);
+          minValue = Math.max(minValue, pipe.requirement + Number.EPSILON);
           break;
         case "lt_value":
-          filters.push((value) => value < pipe.requirement);
-          break;
-        case "not_value":
-          filters.push((value) => value !== pipe.requirement);
-          break;
-        case "not_values":
-          filters.push((value) => !pipe.requirement.includes(value));
+          maxValue = Math.min(maxValue, pipe.requirement - Number.EPSILON);
           break;
         case "safe_integer":
-          filters.push((value) => Number.isSafeInteger(value));
+          minValue = Math.max(minValue, Number.MIN_SAFE_INTEGER);
+          maxValue = Math.min(maxValue, Number.MAX_SAFE_INTEGER);
+          multipleOf = multipleOf ?? 1;
           break;
         case "value":
-          filters.push((value) => value === pipe.requirement);
-          break;
+          return fc.constant(pipe.requirement);
         case "values":
-          filters.push((value) => pipe.requirement.includes(value));
-          break;
+          return fc.constantFrom(...pipe.requirement);
+        default:
+          hasUnsupportedFormat = true;
       }
     }
   }
 
+  let arbitrary: fc.Arbitrary<number> | null = null;
+
   if (multipleOf !== null) {
     const factor = multipleOf;
 
-    let arbitrary = fc
+    arbitrary = fc
       .integer({
         min: Math.ceil(minValue / factor),
         max: Math.floor(maxValue / factor),
       })
       .map((value) => value * factor);
-
-    for (const filter of filters) {
-      arbitrary = arbitrary.filter(filter);
-    }
-
-    return arbitrary;
   } else {
     const finiteArbitrary = fc.double({
       min: minValue,
@@ -83,22 +75,16 @@ export function buildNumberArbitrary(schema: UnknownValibotSchema) {
       noNaN: true,
     });
 
-    if (isFinite) {
-      let arbitrary = finiteArbitrary;
-
-      for (const filter of filters) {
-        arbitrary = arbitrary.filter(filter);
-      }
-
-      return arbitrary;
-    } else {
-      let arbitrary = fc.oneof(finiteArbitrary, fc.constant(Infinity));
-
-      for (const filter of filters) {
-        arbitrary = arbitrary.filter(filter);
-      }
-
-      return arbitrary;
-    }
+    arbitrary = isFinite
+      ? finiteArbitrary
+      : fc.oneof(
+          finiteArbitrary,
+          fc.constant(Infinity),
+          fc.constant(-Infinity),
+        );
   }
+
+  return hasUnsupportedFormat
+    ? filterBySchema(arbitrary, schema, path)
+    : arbitrary;
 }
