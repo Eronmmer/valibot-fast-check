@@ -18,42 +18,40 @@ export function buildNumberArbitrary(
     return fc.double({ noNaN: true });
   }
 
-  for (const pipe of pipes) {
-    if (pipe.kind === "validation") {
-      switch (pipe.type) {
-        case "min_value":
-          minValue = Math.max(minValue, pipe.requirement);
-          break;
-        case "max_value":
-          maxValue = Math.min(maxValue, pipe.requirement);
-          break;
-        case "integer":
-          multipleOf = multipleOf ?? 1;
-          break;
-        case "finite":
-          isFinite = true;
-          break;
-        case "multiple_of":
-          multipleOf = (multipleOf ?? 1) * pipe.requirement;
-          break;
-        case "gt_value":
-          minValue = Math.max(minValue, pipe.requirement + Number.EPSILON);
-          break;
-        case "lt_value":
-          maxValue = Math.min(maxValue, pipe.requirement - Number.EPSILON);
-          break;
-        case "safe_integer":
-          minValue = Math.max(minValue, Number.MIN_SAFE_INTEGER);
-          maxValue = Math.min(maxValue, Number.MAX_SAFE_INTEGER);
-          multipleOf = multipleOf ?? 1;
-          break;
-        case "value":
-          return fc.constant(pipe.requirement);
-        case "values":
-          return fc.constantFrom(...pipe.requirement);
-        default:
-          hasUnsupportedFormat = true;
-      }
+  for (const pipe of pipes.filter((pipe) => pipe.kind === "validation")) {
+    switch (pipe.type) {
+      case "min_value":
+        minValue = Math.max(minValue, pipe.requirement);
+        break;
+      case "max_value":
+        maxValue = Math.min(maxValue, pipe.requirement);
+        break;
+      case "integer":
+        multipleOf = multipleOf ?? 1;
+        break;
+      case "finite":
+        isFinite = true;
+        break;
+      case "multiple_of":
+        multipleOf = (multipleOf ?? 1) * pipe.requirement;
+        break;
+      case "gt_value":
+        minValue = Math.max(minValue, pipe.requirement + Number.EPSILON);
+        break;
+      case "lt_value":
+        maxValue = Math.min(maxValue, pipe.requirement - Number.EPSILON);
+        break;
+      case "safe_integer":
+        minValue = Math.max(minValue, Number.MIN_SAFE_INTEGER);
+        maxValue = Math.min(maxValue, Number.MAX_SAFE_INTEGER);
+        multipleOf = multipleOf ?? 1;
+        break;
+      case "value":
+        return fc.constant(pipe.requirement);
+      case "values":
+        return fc.constantFrom(...pipe.requirement);
+      default:
+        hasUnsupportedFormat = true;
     }
   }
 

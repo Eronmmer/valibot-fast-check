@@ -1,11 +1,11 @@
 import fc from "fast-check";
 import { UnknownValibotSchema } from "..";
+import { filterBySchema } from "../helpers";
 
-export function buildDateArbitrary(schema: UnknownValibotSchema) {
+export function buildDateArbitrary(schema: UnknownValibotSchema, path: string) {
   let minValue: Date | null = null;
   let maxValue: Date | null = null;
-
-  const filters: Array<(n: Date) => boolean> = [];
+  let hasUnsupportedFormat = false;
 
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
@@ -13,41 +13,34 @@ export function buildDateArbitrary(schema: UnknownValibotSchema) {
     return fc.date();
   }
 
-  for (const pipe of pipes) {
-    if (pipe.kind === "validation") {
-      switch (pipe.type) {
-        case "min_value":
-          if (minValue === null || pipe.requirement > minValue) {
-            minValue = pipe.requirement;
-          }
-          break;
-        case "max_value":
-          if (maxValue === null || pipe.requirement < maxValue) {
-            maxValue = pipe.requirement;
-          }
-          break;
-        case "check":
-          filters.push(pipe.requirement);
-          break;
-        case "gt_value":
-          filters.push((value) => value > pipe.requirement);
-          break;
-        case "lt_value":
-          filters.push((value) => value < pipe.requirement);
-          break;
-        case "not_value":
-          filters.push((value) => value !== pipe.requirement);
-          break;
-        case "not_values":
-          filters.push((value) => !pipe.requirement.includes(value));
-          break;
-        case "value":
-          filters.push((value) => value === pipe.requirement);
-          break;
-        case "values":
-          filters.push((value) => pipe.requirement.includes(value));
-          break;
-      }
+  for (const pipe of pipes.filter((pipe) => pipe.kind === "validation")) {
+    switch (pipe.type) {
+      case "min_value":
+        if (minValue === null || pipe.requirement > minValue) {
+          minValue = pipe.requirement;
+        }
+        break;
+      case "max_value":
+        if (maxValue === null || pipe.requirement < maxValue) {
+          maxValue = pipe.requirement;
+        }
+        break;
+      case "gt_value":
+        if (minValue === null || pipe.requirement > minValue) {
+          minValue = pipe.requirement;
+        }
+        break;
+      case "lt_value":
+        if (maxValue === null || pipe.requirement < maxValue) {
+          maxValue = pipe.requirement;
+        }
+        break;
+      case "value":
+        return fc.constant(pipe.requirement);
+      case "values":
+        return fc.constantFrom(...pipe.requirement);
+      default:
+        hasUnsupportedFormat = true;
     }
   }
 
@@ -61,11 +54,9 @@ export function buildDateArbitrary(schema: UnknownValibotSchema) {
     constraints.max = maxValue;
   }
 
-  let arbitrary = fc.date(constraints);
+  const arbitrary = fc.date(constraints);
 
-  for (const filter of filters) {
-    arbitrary = arbitrary.filter(filter);
-  }
-
-  return arbitrary;
+  return hasUnsupportedFormat
+    ? filterBySchema(arbitrary, schema, path)
+    : arbitrary;
 }

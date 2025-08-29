@@ -25,6 +25,7 @@ import type {
   BaseIssue,
   VoidSchema,
   OptionalSchema,
+  NullableSchema,
 } from "valibot";
 
 type ExtractSchemaType<T> = T extends { readonly type: infer U } ? U : never;
@@ -49,11 +50,21 @@ export type VFCType =
         BaseSchema<unknown, unknown, BaseIssue<unknown>>,
         undefined
       >
+    >
+  | ExtractSchemaType<
+      NullableSchema<
+        BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+        undefined
+      >
     >;
 
 export const arbitraryBuilder: Record<
   VFCType,
-  (schema: UnknownValibotSchema, path: string) => Arbitrary<unknown>
+  (
+    schema: UnknownValibotSchema,
+    path: string,
+    recurse: (schema: UnknownValibotSchema, path: string) => Arbitrary<unknown>,
+  ) => Arbitrary<unknown>
 > = {
   string: buildStringArbitrary,
   number: buildNumberArbitrary,
@@ -67,5 +78,24 @@ export const arbitraryBuilder: Record<
   nan: () => fc.constant(Number.NaN),
   any: () => fc.anything(),
   void: () => fc.constant(undefined),
-  optional: () => fc.constant(undefined), // update this...
+  optional: (schema: UnknownValibotSchema, path, recurse) => {
+    const optionalSchema = schema as OptionalSchema<
+      UnknownValibotSchema,
+      undefined
+    >;
+    return fc.option(recurse(optionalSchema.wrapped, path), {
+      nil: undefined,
+      freq: 2,
+    });
+  },
+  nullable: (schema: UnknownValibotSchema, path, recurse) => {
+    const nullableSchema = schema as NullableSchema<
+      UnknownValibotSchema,
+      undefined
+    >;
+    return fc.option(recurse(nullableSchema.wrapped, path), {
+      nil: null,
+      freq: 2,
+    });
+  },
 };

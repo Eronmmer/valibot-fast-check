@@ -17,9 +17,14 @@ class _VFC {
    */
   inputOf<Schema extends UnknownValibotSchema>(
     schema: Schema,
+    path: string,
   ): Arbitrary<InferInput<Schema>> {
     if (isSupportedSchemaType(schema)) {
-      return arbitraryBuilder[schema.type as VFCType](schema, "");
+      return arbitraryBuilder[schema.type as VFCType](
+        schema,
+        path,
+        this.inputOf.bind(this),
+      );
     }
 
     unsupportedSchemaError(schema.type);
