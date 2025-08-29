@@ -2,6 +2,9 @@
 
 Generate [fast-check](https://github.com/dubzzz/fast-check) arbitraries from [Valibot](https://github.com/fabian-hiller/valibot) schemas for property-based testing.
 
+[![npm version](https://badge.fury.io/js/valibot-fast-check.svg)](https://www.npmjs.com/package/valibot-fast-check)
+[![CI](https://github.com/Eronmmer/valibot-fast-check/workflows/CI/badge.svg)](https://github.com/Eronmmer/valibot-fast-check/actions)
+
 ## Installation
 
 ```bash
@@ -19,9 +22,9 @@ import fc from "fast-check";
 
 // Define a Valibot schema
 const UserSchema = v.object({
-	name: v.pipe(v.string(), v.minLength(1), v.maxLength(50)),
-	age: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(120)),
-	email: v.pipe(v.string(), v.email()),
+  name: v.pipe(v.string(), v.minLength(1), v.maxLength(50)),
+  age: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(120)),
+  email: v.pipe(v.string(), v.email()),
 });
 
 // Generate fast-check arbitraries
@@ -29,11 +32,11 @@ const userArbitrary = vfc().inputOf(UserSchema);
 
 // Use in property-based tests
 fc.assert(
-	fc.property(userArbitrary, (user) => {
-		// Your test logic here
-		const result = v.safeParse(UserSchema, user);
-		expect(result.success).toBe(true);
-	})
+  fc.property(userArbitrary, (user) => {
+    // Your test logic here
+    const result = v.safeParse(UserSchema, user);
+    expect(result.success).toBe(true);
+  }),
 );
 ```
 
@@ -164,23 +167,23 @@ For complex or custom constraints, falls back to schema validation with efficien
 ```typescript
 // Custom validations automatically use filterBySchema
 const schema = v.pipe(
-	v.number(),
-	v.check((x) => isPrime(x)) // Custom validation
+  v.number(),
+  v.check((x) => isPrime(x)), // Custom validation
 );
 
 // Constraints that can't be optimized
 const schema2 = v.pipe(
-	v.number(),
-	v.notValue(5), // Uses filterBySchema
-	v.notValues([1, 2, 3]) // Uses filterBySchema
+  v.number(),
+  v.notValue(5), // Uses filterBySchema
+  v.notValues([1, 2, 3]), // Uses filterBySchema
 );
 
 // Multiple string content constraints
 const schema3 = v.pipe(
-	v.string(),
-	v.startsWith("hello"),
-	v.endsWith("world"),
-	v.includes("test") // Falls back to filterBySchema
+  v.string(),
+  v.startsWith("hello"),
+  v.endsWith("world"),
+  v.includes("test"), // Falls back to filterBySchema
 );
 ```
 
@@ -191,21 +194,21 @@ The library provides detailed error messages for unsupported schemas and generat
 ```typescript
 // Unsupported schema type
 try {
-	vfc().inputOf(unsupportedSchema);
+  vfc().inputOf(unsupportedSchema);
 } catch (error) {
-	// VFCUnsupportedSchemaError: Unable to generate valid values for Valibot schema. CustomType schemas are not supported.
+  // VFCUnsupportedSchemaError: Unable to generate valid values for Valibot schema. CustomType schemas are not supported.
 }
 
 // Low success rate from filterBySchema
 try {
-	const restrictiveSchema = v.pipe(
-		v.number(),
-		v.check((x) => x === Math.PI) // Extremely low success rate
-	);
-	const samples = fc.sample(vfc().inputOf(restrictiveSchema), 10);
+  const restrictiveSchema = v.pipe(
+    v.number(),
+    v.check((x) => x === Math.PI), // Extremely low success rate
+  );
+  const samples = fc.sample(vfc().inputOf(restrictiveSchema), 10);
 } catch (error) {
-	// VFCGenerationError: Unable to generate valid values for the passed Valibot schema.
-	// Please provide an override for the schema at path '.'.
+  // VFCGenerationError: Unable to generate valid values for the passed Valibot schema.
+  // Please provide an override for the schema at path '.'.
 }
 ```
 
@@ -219,21 +222,21 @@ import * as v from "valibot";
 import fc from "fast-check";
 
 const schema = v.object({
-	username: v.pipe(v.string(), v.minLength(3), v.maxLength(20)),
-	password: v.pipe(v.string(), v.minLength(8)),
-	age: v.pipe(v.number(), v.integer(), v.minValue(13)),
+  username: v.pipe(v.string(), v.minLength(3), v.maxLength(20)),
+  password: v.pipe(v.string(), v.minLength(8)),
+  age: v.pipe(v.number(), v.integer(), v.minValue(13)),
 });
 
 fc.assert(
-	fc.property(vfc().inputOf(schema), (data) => {
-		// Test that all generated data is valid
-		const result = v.safeParse(schema, data);
-		expect(result.success).toBe(true);
+  fc.property(vfc().inputOf(schema), (data) => {
+    // Test that all generated data is valid
+    const result = v.safeParse(schema, data);
+    expect(result.success).toBe(true);
 
-		// Test business logic
-		expect(data.username.length).toBeGreaterThanOrEqual(3);
-		expect(data.age).toBeGreaterThanOrEqual(13);
-	})
+    // Test business logic
+    expect(data.username.length).toBeGreaterThanOrEqual(3);
+    expect(data.age).toBeGreaterThanOrEqual(13);
+  }),
 );
 ```
 
@@ -241,15 +244,15 @@ fc.assert(
 
 ```typescript
 const AddressSchema = v.object({
-	street: v.string(),
-	city: v.string(),
-	zipCode: v.pipe(v.string(), v.regex(/^\d{5}$/)),
+  street: v.string(),
+  city: v.string(),
+  zipCode: v.pipe(v.string(), v.regex(/^\d{5}$/)),
 });
 
 const PersonSchema = v.object({
-	name: v.string(),
-	addresses: v.array(AddressSchema),
-	primaryAddress: v.optional(AddressSchema),
+  name: v.string(),
+  addresses: v.array(AddressSchema),
+  primaryAddress: v.optional(AddressSchema),
 });
 
 const personArbitrary = vfc().inputOf(PersonSchema);
@@ -260,13 +263,13 @@ const personArbitrary = vfc().inputOf(PersonSchema);
 
 ```typescript
 const schema = v.object({
-	id: v.string(), // We want specific ID format
-	data: v.any(),
+  id: v.string(), // We want specific ID format
+  data: v.any(),
 });
 
 const customGenerator = vfc().override(
-	v.string(),
-	fc.uuid() // All strings will be UUIDs
+  v.string(),
+  fc.uuid(), // All strings will be UUIDs
 );
 
 const arbitrary = customGenerator.inputOf(schema);
