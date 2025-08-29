@@ -5,7 +5,3 @@ node_modules
 npm-debug.log*
 .vscode/
 .DS_Store
-
-# remove the following before publishing
-/src/play-ground.js
-temp.md
