@@ -1,5 +1,4 @@
-import * as v from "valibot";
-import { BaseIssue, BaseSchema, isOfKind } from "valibot";
+import { BaseIssue, BaseSchema, isOfKind, safeParse } from "valibot";
 import {
   UnknownValibotSchema,
   VFCGenerationError,
@@ -25,7 +24,7 @@ export function isSupportedSchemaType(schema: UnknownValibotSchema): boolean {
   );
 }
 
-function guardPredicate<Value, Refined extends Value>(
+export function guardPredicate<Value, Refined extends Value>(
   successRate: number,
   predicate: (value: Value) => value is Refined,
   path: string,
@@ -44,7 +43,7 @@ function guardPredicate<Value, Refined extends Value>(
     if (total > MIN_RUNS && successful / total < successRate) {
       throw new VFCGenerationError(
         "Unable to generate valid values for the passed Valibot schema. " +
-          `Please provide an override for the schema at path '${path || "."}'.`, // implement overrides. remove this comment before publishing.
+          `Please provide an override for the schema at path '${path || "."}'.`,
       );
     }
 
@@ -52,7 +51,7 @@ function guardPredicate<Value, Refined extends Value>(
   };
 }
 
-const MIN_SUCCESS_RATE = 0.01;
+export const MIN_SUCCESS_RATE = 0.01;
 
 export function filterBySchema(
   arbitrary: Arbitrary<unknown>,
@@ -62,8 +61,23 @@ export function filterBySchema(
   return arbitrary.filter(
     guardPredicate(
       MIN_SUCCESS_RATE,
-      (value): value is typeof value => v.safeParse(schema, value).success,
+      (value): value is typeof value => safeParse(schema, value).success,
       path,
     ),
   );
 }
+
+export const SCALAR_TYPES = new Set([
+  "string",
+  "number",
+  "bigint",
+  "boolean",
+  "date",
+  "undefined",
+  "null",
+  "literal",
+  "enum",
+  "any",
+  "unknown",
+  "void",
+]);
