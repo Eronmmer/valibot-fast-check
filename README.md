@@ -2,8 +2,6 @@
 
 Generate [fast-check](https://github.com/dubzzz/fast-check) arbitraries from [Valibot](https://github.com/fabian-hiller/valibot) schemas for property-based testing.
 
-[![npm version](https://badge.fury.io/js/valibot-fast-check.svg)](https://www.npmjs.com/package/valibot-fast-check)
-
 ## Installation
 
 ```bash
