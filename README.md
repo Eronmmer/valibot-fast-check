@@ -8,11 +8,7 @@ Generate [fast-check](https://github.com/dubzzz/fast-check) arbitraries from [Va
 ## Installation
 
 ```bash
-npm install valibot-fast-check
-# or
 pnpm add valibot-fast-check
-# or
-yarn add valibot-fast-check
 ```
 
 ## Quick Start
@@ -254,4 +250,4 @@ const arbitrary = customGenerator.inputOf(schema);
 
 ## Acknowledgments
 
-Inspired by [zod-fast-check](https://github.com/DavidTimms/zod-fast-check) by David Timms. This library brings the same concept to Valibot, leveraging Valibot's smaller bundle size.
+Inspired by [zod-fast-check](https://github.com/DavidTimms/zod-fast-check). This library brings the same concept to Valibot, leveraging Valibot's smaller bundle size.
