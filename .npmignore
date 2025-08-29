@@ -1,0 +1,24 @@
+# Source files (only ship built dist/)
+src/
+__tests__/
+*.test.ts
+
+# Development files
+.gitignore
+tsconfig.json
+eslint.config.mts
+vitest.config.ts
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build artifacts we don't need
+dist/src/
+dist/vitest.config.*
+
+# Development docs
+temp.md
+
+# Editor configs
+.vscode/
