@@ -6,6 +6,8 @@ Generate [fast-check](https://github.com/dubzzz/fast-check) arbitraries from [Va
 
 ```bash
 pnpm add valibot-fast-check
+# or
+npm install valibot-fast-check
 ```
 
 ## Quick Start
