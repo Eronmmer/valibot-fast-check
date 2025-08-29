@@ -9,26 +9,30 @@ export function buildArrayArbitrary(
   recurse: (schema: UnknownValibotSchema, path: string) => Arbitrary<unknown>,
 ) {
   const arraySchema = schema as ArraySchema<UnknownValibotSchema, undefined>;
-  let minLength = 0;
-  let maxLength = 10;
+  let minLength: number | null = null;
+  let maxLength: number | null = null;
   let hasUnsupportedFormat = false;
 
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
   if (!pipes || !Array.isArray(pipes)) {
     return fc.array(recurse(arraySchema.item, path + "[*]"), {
-      minLength,
-      maxLength,
+      minLength: 0,
+      maxLength: 10,
     });
   }
 
   for (const pipe of pipes.filter((pipe) => pipe.kind === "validation")) {
     switch (pipe.type) {
       case "min_length":
-        minLength = Math.max(minLength, pipe.requirement);
+        if (minLength === null || pipe.requirement > minLength) {
+          minLength = pipe.requirement;
+        }
         break;
       case "max_length":
-        maxLength = Math.min(maxLength, pipe.requirement);
+        if (maxLength === null || pipe.requirement < maxLength) {
+          maxLength = pipe.requirement;
+        }
         break;
       case "size":
         minLength = pipe.requirement;
@@ -41,8 +45,8 @@ export function buildArrayArbitrary(
   }
 
   const arbitrary = fc.array(recurse(arraySchema.item, path + "[*]"), {
-    minLength,
-    maxLength,
+    minLength: minLength ?? 0,
+    maxLength: maxLength ?? 10,
   });
 
   return hasUnsupportedFormat

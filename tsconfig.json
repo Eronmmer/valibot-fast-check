@@ -1,7 +1,6 @@
 {
   "include": [
     "./src/**/*",
-    "./vitest.config.ts"
   ],
   "compilerOptions": {
     "outDir": "./dist",

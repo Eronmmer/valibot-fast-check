@@ -7,10 +7,13 @@ import {
 import { arbitraryBuilder } from "./builder";
 import { Arbitrary } from "fast-check";
 
-export function unsupportedSchemaError(schemaTypeName: string): never {
+export function unsupportedSchemaError(
+  schemaTypeName: string,
+  path: string = ".",
+): never {
   throw new VFCUnsupportedSchemaError(
-    `Unable to generate valid values for Valibot schema.` +
-      `${schemaTypeName} schemas are not supported.`,
+    `Unable to generate valid values for Valibot schema. ` +
+      `${schemaTypeName} schemas are not supported at path '${path || "."}' .`,
   );
 }
 

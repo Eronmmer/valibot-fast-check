@@ -28,6 +28,8 @@ import type {
   NullableSchema,
   EnumSchema,
   Enum,
+  PicklistSchema,
+  PicklistOptions,
   FunctionSchema,
   LiteralSchema,
   Literal,
@@ -71,6 +73,7 @@ export type VFCType =
       >
     >
   | ExtractSchemaType<EnumSchema<Enum, undefined>>
+  | ExtractSchemaType<PicklistSchema<PicklistOptions, undefined>>
   | ExtractSchemaType<FunctionSchema<undefined>>
   | ExtractSchemaType<LiteralSchema<Literal, undefined>>
   | ExtractSchemaType<
@@ -157,6 +160,12 @@ export const arbitraryBuilder: Record<
   enum: (schema) => {
     const enumSchema = schema as EnumSchema<Enum, undefined>;
     return fc.oneof(...enumSchema.options.map((option) => fc.constant(option)));
+  },
+  picklist: (schema) => {
+    const picklistSchema = schema as PicklistSchema<PicklistOptions, undefined>;
+    return fc.oneof(
+      ...picklistSchema.options.map((option) => fc.constant(option)),
+    );
   },
   function: () => fc.func(fc.anything()),
   literal: (schema) => {

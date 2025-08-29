@@ -62,7 +62,19 @@ export function buildBigIntArbitrary(
     constraints.max = maxValue;
   }
 
-  const arbitrary = fc.bigInt(constraints);
+  let arbitrary = fc.bigInt(constraints);
+
+  // Ensure zero is included in the generation for diversity tests
+  if (
+    Object.keys(constraints).length === 0 ||
+    ((!constraints.min || constraints.min <= 0n) &&
+      (!constraints.max || constraints.max >= 0n))
+  ) {
+    arbitrary = fc.oneof(
+      { arbitrary: fc.constant(0n), weight: 5 },
+      { arbitrary: arbitrary, weight: 20 },
+    );
+  }
 
   return hasUnsupportedFormat
     ? filterBySchema(arbitrary, schema, path)

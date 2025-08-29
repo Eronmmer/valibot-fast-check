@@ -2,6 +2,9 @@ import fc from "fast-check";
 import { UnknownValibotSchema } from "../index";
 import { filterBySchema } from "../helpers";
 
+const VALIBOT_EMAIL_REGEX =
+  /^[\w+-]+(?:\.[\w+-]+)*@[\da-z]+(?:[.-][\da-z]+)*\.[a-z]{2,}$/iu;
+
 export function buildStringArbitrary(
   schema: UnknownValibotSchema,
   path: string,
@@ -37,8 +40,10 @@ export function buildStringArbitrary(
         break;
       case "uuid":
         return fc.uuid();
-      case "email":
-        return fc.emailAddress();
+      case "email": {
+        const emailRegex = validation.requirement || VALIBOT_EMAIL_REGEX;
+        return fc.emailAddress().filter((email) => emailRegex.test(email));
+      }
       case "url":
         return fc.webUrl();
       case "includes":

@@ -36,10 +36,18 @@ export function buildNumberArbitrary(
         multipleOf = (multipleOf ?? 1) * pipe.requirement;
         break;
       case "gt_value":
-        minValue = Math.max(minValue, pipe.requirement + Number.EPSILON);
+        minValue = Math.max(
+          minValue,
+          pipe.requirement +
+            (Number.isInteger(pipe.requirement) ? 1 : Number.EPSILON),
+        );
         break;
       case "lt_value":
-        maxValue = Math.min(maxValue, pipe.requirement - Number.EPSILON);
+        maxValue = Math.min(
+          maxValue,
+          pipe.requirement -
+            (Number.isInteger(pipe.requirement) ? 1 : Number.EPSILON),
+        );
         break;
       case "safe_integer":
         minValue = Math.max(minValue, Number.MIN_SAFE_INTEGER);
@@ -73,13 +81,19 @@ export function buildNumberArbitrary(
       noNaN: true,
     });
 
-    arbitrary = isFinite
-      ? finiteArbitrary
-      : fc.oneof(
-          finiteArbitrary,
-          fc.constant(Infinity),
-          fc.constant(-Infinity),
-        );
+    if (isFinite) {
+      arbitrary = finiteArbitrary;
+    } else {
+      // Only include infinity values if they don't violate constraints
+      const infinityOptions = [];
+      if (maxValue >= Infinity) infinityOptions.push(fc.constant(Infinity));
+      if (minValue <= -Infinity) infinityOptions.push(fc.constant(-Infinity));
+
+      arbitrary =
+        infinityOptions.length > 0
+          ? fc.oneof(finiteArbitrary, ...infinityOptions)
+          : finiteArbitrary;
+    }
   }
 
   return hasUnsupportedFormat

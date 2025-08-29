@@ -87,7 +87,7 @@ class _VFC {
       );
     }
 
-    unsupportedSchemaError(schema.type);
+    unsupportedSchemaError(schema.type, path);
   }
 
   private findOverride<Input>(

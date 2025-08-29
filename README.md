@@ -2,8 +2,8 @@
 
 Generate [fast-check](https://github.com/dubzzz/fast-check) arbitraries from [Valibot](https://github.com/fabian-hiller/valibot) schemas for property-based testing.
 
-<!-- [![npm version](https://badge.fury.io/js/valibot-fast-check.svg)](https://www.npmjs.com/package/valibot-fast-check)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) -->
+[![npm version](https://badge.fury.io/js/valibot-fast-check.svg)](https://www.npmjs.com/package/valibot-fast-check)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
@@ -78,11 +78,11 @@ const generator = vfc().override(customSchema, customArbitrary);
 
 ### Primitive Types
 
-- ✅ `string` - with optimizations for length, format constraints
-- ✅ `number` - with range, integer, finite, safe integer optimizations
-- ✅ `bigint` - with range constraints
-- ✅ `boolean` - simple boolean generation
-- ✅ `date` - with min/max date constraints
+- ✅ `string` - length (`minLength`, `maxLength`, `length`), content (`startsWith`, `endsWith`, `includes`, `trim`), formats (`email`, `uuid`, `url`), exact values (`value`, `values`)
+- ✅ `number` - range (`minValue`, `maxValue`, `gtValue`, `ltValue`), constraints (`integer`, `finite`, `safeInteger`, `multipleOf`), exact values (`value`, `values`)
+- ✅ `bigint` - range constraints and exact values
+- ✅ `boolean` - with value constraints
+- ✅ `date` - with range constraints and exact values
 - ✅ `undefined`, `null`, `void`, `any`, `unknown`
 - ✅ `nan` - generates `Number.NaN`
 
@@ -99,7 +99,7 @@ const generator = vfc().override(customSchema, customArbitrary);
 - ✅ `optional` - uses `fc.option()` with undefined
 - ✅ `nullable` - uses `fc.option()` with null
 - ✅ `nullish` - generates value, null, or undefined
-- ✅ `enum` - picks from enum values
+- ✅ `enum` / `picklist` - picks from enum values
 - ✅ `literal` - generates exact literal values
 - ✅ `union` - generates from union alternatives
 - ✅ `function` - generates callable functions
@@ -133,32 +133,56 @@ Direct generation for exact values:
 // ✅ Generates: fc.constantFrom("a", "b", "c")
 ```
 
-### String Formats
+### String Formats and Content
 
-Built-in fast-check generators for common formats:
+Built-in optimizations for string constraints:
 
 ```typescript
+// Format constraints
 // Schema: v.pipe(v.string(), v.email())
-// ✅ Generates: fc.emailAddress()
+// ✅ Generates: fc.emailAddress() with Valibot's email regex
 
 // Schema: v.pipe(v.string(), v.uuid())
 // ✅ Generates: fc.uuid()
 
 // Schema: v.pipe(v.string(), v.url())
 // ✅ Generates: fc.webUrl()
+
+// Content constraints (when used individually)
+// Schema: v.pipe(v.string(), v.startsWith("prefix"))
+// ✅ Generates: fc.string().map(s => "prefix" + s)
+
+// Schema: v.pipe(v.string(), v.endsWith("suffix"))
+// ✅ Generates: fc.string().map(s => s + "suffix")
+
+// Multiple content constraints fall back to filterBySchema
 ```
 
 ### Complex Validations
 
-For complex constraints, falls back to schema validation with efficiency monitoring:
+For complex or custom constraints, falls back to schema validation with efficiency monitoring:
 
 ```typescript
-// Automatically detects low success rates and provides helpful errors
+// Custom validations automatically use filterBySchema
 const schema = v.pipe(
 	v.number(),
-	v.check((x) => isPrime(x))
+	v.check((x) => isPrime(x)) // Custom validation
 );
-// Will warn if success rate drops below 1%
+
+// Constraints that can't be optimized
+const schema2 = v.pipe(
+	v.number(),
+	v.notValue(5), // Uses filterBySchema
+	v.notValues([1, 2, 3]) // Uses filterBySchema
+);
+
+// Multiple string content constraints
+const schema3 = v.pipe(
+	v.string(),
+	v.startsWith("hello"),
+	v.endsWith("world"),
+	v.includes("test") // Falls back to filterBySchema
+);
 ```
 
 ## Error Handling
@@ -173,15 +197,16 @@ try {
 	// VFCUnsupportedSchemaError: Unable to generate valid values for Valibot schema. CustomType schemas are not supported.
 }
 
-// Low success rate
+// Low success rate from filterBySchema
 try {
 	const restrictiveSchema = v.pipe(
 		v.number(),
-		v.check((x) => x === Math.PI)
+		v.check((x) => x === Math.PI) // Extremely low success rate
 	);
-	vfc().inputOf(restrictiveSchema);
+	const samples = fc.sample(vfc().inputOf(restrictiveSchema), 10);
 } catch (error) {
-	// VFCGenerationError: Unable to generate valid values for the passed Valibot schema. Please provide an override for the schema at path '.'.
+	// VFCGenerationError: Unable to generate valid values for the passed Valibot schema.
+	// Please provide an override for the schema at path '.'.
 }
 ```
 
@@ -247,6 +272,14 @@ const customGenerator = vfc().override(
 
 const arbitrary = customGenerator.inputOf(schema);
 ```
+
+## Current Limitations
+
+- **String combinations**: Multiple content constraints with length requirements fall back to `filterBySchema`
+- **Custom validations**: `v.check()` and `v.custom()` always use filtering and may have low success rates
+- **Unsupported constraints**: `v.notValue()`, `v.notValues()` use filtering (low efficiency for large exclusion sets)
+- **Date generation**: May occasionally produce `NaN` dates due to fast-check limitations
+- **Regex constraints**: `v.regex()` not yet optimized (uses `filterBySchema`)
 
 ## Acknowledgments
 
