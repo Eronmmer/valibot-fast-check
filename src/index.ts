@@ -17,24 +17,26 @@ class _VFC {
    */
   inputOf<Schema extends UnknownValibotSchema>(
     schema: Schema,
-    path: string,
   ): Arbitrary<InferInput<Schema>> {
+    return this.inputWithPath(schema, "");
+  }
+
+  private inputWithPath<Input>(
+    schema: UnknownValibotSchema,
+    path: string,
+  ): Arbitrary<Input> {
     if (isSupportedSchemaType(schema)) {
       return arbitraryBuilder[schema.type as VFCType](
         schema,
         path,
-        this.inputOf.bind(this),
-      );
+        this.inputWithPath.bind(this),
+      ) as Arbitrary<Input>;
     }
 
     unsupportedSchemaError(schema.type);
   }
 
-  // outputOf<Schema extends UnknownValibotSchema>(
-  // 	schema: Schema
-  // ): Arbitrary<InferOutput<Schema>> {
-  // 	return "sup";
-  // }
+  // output & override methods go here...
 }
 
 export type VFC = _VFC;
