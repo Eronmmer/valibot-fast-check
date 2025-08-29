@@ -1,6 +1,6 @@
 {
   "name": "valibot-fast-check",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generate fast-check arbitraries for Valibot schemas",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
