@@ -10,7 +10,7 @@ export function buildDateArbitrary(schema: UnknownValibotSchema, path: string) {
   const pipes = "pipe" in schema ? schema.pipe : undefined;
 
   if (!pipes || !Array.isArray(pipes)) {
-    return fc.date();
+    return fc.date({ noInvalidDate: true });
   }
 
   for (const pipe of pipes.filter((pipe) => pipe.kind === "validation")) {
@@ -44,7 +44,9 @@ export function buildDateArbitrary(schema: UnknownValibotSchema, path: string) {
     }
   }
 
-  const constraints: { min?: Date; max?: Date } = {};
+  const constraints: { min?: Date; max?: Date; noInvalidDate?: boolean } = {
+    noInvalidDate: true,
+  };
 
   if (minValue instanceof Date) {
     constraints.min = minValue;
